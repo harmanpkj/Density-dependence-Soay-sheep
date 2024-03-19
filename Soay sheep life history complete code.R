@@ -23,6 +23,7 @@ setwd("/Users/harmanjaggi/Documents/Research/LRS/FixedEnv/FixedEnv")
 devtools::load_all(".")
 
 # Read the params from covariance matrix samples. This file contains 10000 of them.
+# rand.params file is attached.
 dat_og1 <- read.csv("rand.params.csv")
 
 # remove the serial number column
@@ -30,6 +31,7 @@ dat_og <- dat_og1[,-1]
 head(dat_og)
 # hist.data.frame(dat_og)
 
+# Sample as many parameters from the rand.params. Here nsim is set to 250.
 nsim = 250
 set.seed(120)
 # set.seed(120)
@@ -37,27 +39,7 @@ sample1.dat <- sample_n(dat_og, nsim)
 sample2.dat <- sample_n(dat_og, nsim)
 sample3.dat <- sample_n(dat_og, nsim)
 
-# Compare with optimal and suboptimal strategies
-topdi <- as.data.frame(t(read.csv("top5di.csv")))
-rownames(topdi) <- NULL
-# topdi$params <- paste0(c(1:16),"DI")
-topdd <- as.data.frame(t(read.csv("top5dd.csv")))
-rownames(topdd) <- NULL
-# topdd$params <- paste0(c(1:16),"DD")
-head(topdd)
-
-
-# sample1.dat == sample2.dat
-# sample1.dat== sample3.dat
-# which(c(dat_og[,1])==c(test[1]))
-# dat_og[9839,]
-# test
-# sample2.dat <- apply(dat_og, 2, sample_func)
-#
-# sample3.dat <- apply(dat_og, 2, sample_func)
-#
-# sample4.dat <- apply(dat_og, 2, sample_func)
-
+# Check the CV for each parameter in the set
 cv_sam1 <- sqrt(diag(var(sample1.dat)))/abs(colMeans(sample1.dat))
 cv_sam2 <- sqrt(diag(var(sample2.dat)))/abs(colMeans(sample2.dat))
 cv_sam3 <- sqrt(diag(var(sample3.dat)))/abs(colMeans(sample3.dat))
@@ -184,7 +166,7 @@ R.fun <- function(z,intercept,z.slope,n.slope,year.eff,id.eff,N) {
   return((u/(1+u)))
 }
 
-
+# Growth function
 G.fun <- function(z, zz, intercept.mu,
                   z.slope.mu, n.slope.mu, year.eff.mu,
                   id.eff.mu, intercept.va, z.slope.va,
@@ -233,8 +215,6 @@ G.prop.ratio.fun <- function(z, intercept.mu,
   }
   return(list(mu.z, z, ratiog))
 }
-
-
 
 # Inheritance function D(z'|z)  zz = z' for R code.  Note same structure as G in this case -- could have different probability distribution if needed
 D.ratio.fun <- function(z, intercept.mu, z.slope.mu,
@@ -309,6 +289,7 @@ bigmatrix_agestage_eqm <-function(n, s.params,r.params,g.params,d.params,N) {
 
 # n <- nn
 
+# This function creates a Matrix from the IPM functions
 # use truncated age-stage model
 bigmatrix_agestage_lrs <-function(n, s.params,r.params,g.params,d.params,N) {
   
@@ -346,6 +327,7 @@ bigmatrix_agestage_lrs <-function(n, s.params,r.params,g.params,d.params,N) {
 
 
 
+# This function finds the equilibrium carrying capacity
 # toprms <- as.matrix(sample1.dat[1,])
 # toprms <- as.matrix(topdd[1,])
 eqm_func  <- function(toprms){
@@ -466,6 +448,7 @@ get.eigen.stuff <- function(mat){
   return(list(lambda,t.next,r.next))
 }
 
+# Function for generation time
 gentime <- function(M){
   Pmat <- M$G%*%M$S
   Fmat <- M$D%*%M$R
@@ -604,7 +587,6 @@ eqm_dist_block_matrix_func  <- function(toprms){
   # return(junk1)
 }
 
-
 # Function to add newK to data frame
 addK_func <- function(dat)
 {
@@ -664,6 +646,7 @@ topdi.datK <- as.data.frame(addK_func(topdi))
 # hist.data.frame(sample2.datK)
 
 # Plot for equilirbrium sizes distribution
+# Figure 1 in the Appendix
 ggplot(sample1.datK, aes(x=newK))+
   geom_histogram(fill="gray", color="black", bins=15)+
   theme_bw()+
@@ -686,7 +669,7 @@ mean(sample1.datK$newK)
 
 dat <-sample1.datK
 
-# func returns both increment, pratio, ratio!!
+# Func returns both growth increment ratio, juvenile survival, reproduction!!
 get_vitals_func <- function(dat, eqm_ratio){
   
   tbl <- data.frame()
@@ -823,7 +806,7 @@ vitals_tbl1$den <- vitals_tbl1$eqratio
 
 
 # regression plot to highlight growth survival tradeoff at high density
-
+# Figure in the Appendix
 surv_growth_tradeoff <- ggplot(vitals_tbl1, aes(y=Ss, x=Gspr)) +
   
   geom_point( alpha=1, size=1.5, color="darksalmon") +
@@ -862,7 +845,7 @@ row.names(temp_n0) <- NULL
 
 # tbl.pca_dep <- prcomp(temp, scale. = TRUE, center = T)
 
-
+# Figure 1 in the Appendix
 pca_res_n0 <- prcomp(temp_n0, scale. = TRUE)
 # pca_res_n0 <- prcomp(temp_n0)
 pca_plot_n0 <- autoplot(pca_res_n0, data = temp_n0, loadings.label = TRUE,
@@ -1386,6 +1369,7 @@ for (k in 1:length(N_func))
 unique(lrs_gamma.distr_N$N_val)
 lrs_gamma.distr_N$R0_eig
 
+# Figure 2 in the main manuscript
 ggplot(lrs_gamma.distr_N, aes(x=N_val, y=R0_block)) +
   
   geom_point(alpha=0.65, size=1.8) +
@@ -1648,6 +1632,7 @@ custom_palette <- c("gray90", "#b2182b", "#d6604d", "#f4a582", "#fddbc7", "#f7f7
                     "#d1e5f0", "#92c5de", "#4393c3", "#2166ac", "#053061")
 
 
+# Figure 3 in the main manuscript
 # Plot each matrix with the same color scale breaks and custom palette
 mother_plots <- lapply(matF_return, function(mat) {
   df <- melt(mat)
@@ -2020,6 +2005,7 @@ sad_func  <- function(toprms){
   return(sad_tbl)
 }
 
+# Figure 7 in the Appendix
 sad_res1 <- apply(sample1.datK, 1, sad_func)
 sad_res <- as.data.frame(sad_res1)
 dim(sad_res)
@@ -2092,6 +2078,7 @@ cor_mat_sam1_N0 <- cor(corrdat1_N0)
 cor_mat_sam1_K_2 <- cor(corrdat1_K_2)
 cor_mat_sam1_K <- cor(corrdat1_K)
 
+# Figure 3 in the Appendix
 
 pdf("corplot_sam1_N0.png")
 corrplot(cor_mat_sam1_N0, method="color", addCoef.col = "black")
@@ -2161,6 +2148,7 @@ sam1_meanlrs %>% pivot_longer(cols = -c("plrs0",
     legend.position = "bottom")
 
 
+# Figure 4 in the main manuscript
 a <- ggplot(dat1_vitals_meanlrs, aes(Ss, plrs0))+
   geom_point(size=2.5, alpha=0.9, color="darkolivegreen3")+
   # geom_point(dat1_vitals_meanlrs, mapping=aes(Survival_small_ssd, mean_lrs), color="red", size=2.5)+
@@ -2316,7 +2304,7 @@ e <- ggplot(data.frame(dat1_vitals_meanlrs), aes(x=Growth_Inc_small_ssd, y=mean_
     strip.text.x = element_text(size = 20),
     strip.text = element_text())
 
-e
+
 print(b/d)
 print(c/d)
 print(a/b)
